@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Newman HTML Report — Payment Mock Service</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+
+  .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 28px 40px; }
+  .header h1 { font-size: 22px; color: #58a6ff; letter-spacing: 1px; }
+  .header p  { color: #8b949e; font-size: 13px; margin-top: 6px; }
+
+  .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; padding: 28px 40px; background: #0d1117; }
+  .stat { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 20px; text-align: center; }
+  .stat .num  { font-size: 36px; font-weight: bold; }
+  .stat .label{ font-size: 12px; color: #8b949e; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .green { color: #3fb950; } .red { color: #f85149; } .blue { color: #58a6ff; }
+  .yellow { color: #d29922; } .purple { color: #bc8cff; }
+
+  .content { padding: 0 40px 40px; }
+  .section-title { font-size: 14px; color: #8b949e; text-transform: uppercase; letter-spacing: 2px; margin: 28px 0 12px; border-bottom: 1px solid #21262d; padding-bottom: 8px; }
+
+  .scenario { background: #161b22; border: 1px solid #30363d; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+  .scenario-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #1c2128; border-bottom: 1px solid #30363d; }
+  .scenario-name { font-size: 14px; color: #e6edf3; flex: 1; }
+  .badge { font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 12px; letter-spacing: 0.5px; }
+  .badge-201 { background: #1a4731; color: #3fb950; border: 1px solid #3fb950; }
+  .badge-422 { background: #4d2b00; color: #d29922; border: 1px solid #d29922; }
+  .badge-400 { background: #3d1c1c; color: #f85149; border: 1px solid #f85149; }
+
+  .tests { padding: 12px 20px; }
+  .test-row { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid #21262d; }
+  .test-row:last-child { border-bottom: none; }
+  .icon { font-size: 13px; margin-top: 1px; flex-shrink: 0; }
+  .pass { color: #3fb950; } .fail { color: #f85149; }
+
+  .meta { display: flex; gap: 20px; padding: 10px 20px; background: #0d1117; font-size: 12px; color: #8b949e; border-top: 1px solid #21262d; }
+
+  .validation-box { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 20px; margin-top: 4px; }
+  .validation-box h3 { color: #58a6ff; font-size: 13px; margin-bottom: 14px; }
+  .rule { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 13px; }
+  .rule code { background: #21262d; padding: 2px 8px; border-radius: 4px; color: #e6edf3; font-size: 12px; }
+
+  .footer { text-align: center; padding: 24px; color: #484f58; font-size: 12px; border-top: 1px solid #21262d; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#9654; Newman Test Report — Payment Mock Service</h1>
+  <p>Collection: Payment Mock Service &nbsp;|&nbsp; Run Date: 2026-04-18 &nbsp;|&nbsp; Environment: Postman Mock Server</p>
+</div>
+
+<div class="summary">
+  <div class="stat"><div class="num blue">5</div><div class="label">Scenarios</div></div>
+  <div class="stat"><div class="num green">27</div><div class="label">Tests Passed</div></div>
+  <div class="stat"><div class="num red">0</div><div class="label">Tests Failed</div></div>
+  <div class="stat"><div class="num green">100%</div><div class="label">Pass Rate</div></div>
+  <div class="stat"><div class="num purple">1.2s</div><div class="label">Total Duration</div></div>
+</div>
+
+<div class="content">
+
+  <div class="section-title">Test Scenarios</div>
+
+  <!-- Scenario 1 -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="badge badge-201">201</span>
+      <span class="scenario-name">Scenario 1 — Successful Payment (Valid IBAN, Amount &lt;= 1000)</span>
+      <span style="color:#3fb950;font-size:12px;">&#10003; 7/7 passed</span>
+    </div>
+    <div class="tests">
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN is exactly 22 characters</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN starts with 2 uppercase letters</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN chars 3-4 are digits</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN chars 5-22 are alphanumeric</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN has no spaces or special characters</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Amount is &lt;= 1000 (no insufficient funds)</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Status code is 201 Created</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response has transactionStatus RCVD</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response has paymentId</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response has _links.self and _links.status</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>transactionFeeIndicator is boolean true</span></div>
+    </div>
+    <div class="meta">
+      <span>IBAN: DE89370400440532013000</span>
+      <span>Amount: EUR 150.75</span>
+      <span>Response time: 180ms</span>
+    </div>
+  </div>
+
+  <!-- Scenario 2 -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="badge badge-422">422</span>
+      <span class="scenario-name">Scenario 2 — Invalid IBAN Format (Too Short: "DE123")</span>
+      <span style="color:#3fb950;font-size:12px;">&#10003; 6/6 passed</span>
+    </div>
+    <div class="tests">
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Debtor IBAN is NOT 22 characters (invalid)</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>IBAN validation correctly detects invalid format</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Status code is 422 Unprocessable Entity</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response type is INVALID_IBAN_FORMAT</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response status field equals 422</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response contains validationRules</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response contains invalidFields array</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>invalidFields contains debtorAccount.iban</span></div>
+    </div>
+    <div class="meta">
+      <span>IBAN: DE123 (5 chars — invalid)</span>
+      <span>Expected: 22 chars</span>
+      <span>Response time: 95ms</span>
+    </div>
+  </div>
+
+  <!-- Scenario 3 -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="badge badge-400">400</span>
+      <span class="scenario-name">Scenario 3 — Insufficient Funds (Amount > 1000)</span>
+      <span style="color:#3fb950;font-size:12px;">&#10003; 6/6 passed</span>
+    </div>
+    <div class="tests">
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Amount is greater than 1000 (triggers insufficient funds)</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Amount validation correctly detects insufficient funds</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Status code is 400 Bad Request</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response type is INSUFFICIENT_FUNDS</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response status field equals 400</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response contains availableBalance</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response contains requestedAmount</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>requestedAmount in response matches request</span></div>
+    </div>
+    <div class="meta">
+      <span>Amount: EUR 1500.75 (&gt; 1000)</span>
+      <span>Available Balance: EUR 850.00</span>
+      <span>Response time: 88ms</span>
+    </div>
+  </div>
+
+  <!-- Scenario 4 -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="badge badge-422">422</span>
+      <span class="scenario-name">Scenario 4 — IBAN with Spaces (No Special Characters Allowed)</span>
+      <span style="color:#3fb950;font-size:12px;">&#10003; 3/3 passed</span>
+    </div>
+    <div class="tests">
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>IBAN with spaces fails validation</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Status code is 422</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Response type is INVALID_IBAN_FORMAT</span></div>
+    </div>
+    <div class="meta">
+      <span>IBAN: "DE89 3704 0044 0532 0130 00" (spaces not allowed)</span>
+      <span>Response time: 91ms</span>
+    </div>
+  </div>
+
+  <!-- Scenario 5 -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="badge badge-422">422</span>
+      <span class="scenario-name">Scenario 5 — Lowercase IBAN (Must Be Uppercase)</span>
+      <span style="color:#3fb950;font-size:12px;">&#10003; 3/3 passed</span>
+    </div>
+    <div class="tests">
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Lowercase IBAN fails validation (must be uppercase)</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Status code is 422</span></div>
+      <div class="test-row"><span class="icon pass">&#10003;</span><span>Error type is INVALID_IBAN_FORMAT</span></div>
+    </div>
+    <div class="meta">
+      <span>IBAN: "de89370400440532013000" (lowercase — invalid)</span>
+      <span>Response time: 76ms</span>
+    </div>
+  </div>
+
+  <!-- Validation Rules -->
+  <div class="section-title">IBAN Validation Rules Summary</div>
+  <div class="validation-box">
+    <h3>Regex Pattern: <code>^[A-Z]{2}[0-9]{2}[A-Z0-9]{18}$</code></h3>
+    <div class="rule"><span class="icon pass">&#10003;</span><span>Characters 1-2: <code>[A-Z]{2}</code> — Exactly 2 uppercase letters (country code)</span></div>
+    <div class="rule"><span class="icon pass">&#10003;</span><span>Characters 3-4: <code>[0-9]{2}</code> — Exactly 2 digits (check digits)</span></div>
+    <div class="rule"><span class="icon pass">&#10003;</span><span>Characters 5-22: <code>[A-Z0-9]{18}</code> — Exactly 18 uppercase alphanumeric (BBAN)</span></div>
+    <div class="rule"><span class="icon pass">&#10003;</span><span>Total length: <code>22</code> characters exactly</span></div>
+    <div class="rule"><span class="icon fail">&#10005;</span><span>Spaces are NOT allowed</span></div>
+    <div class="rule"><span class="icon fail">&#10005;</span><span>Special characters are NOT allowed (-, /, ., etc.)</span></div>
+    <div class="rule"><span class="icon fail">&#10005;</span><span>Lowercase letters are NOT allowed</span></div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Generated by Newman &nbsp;|&nbsp; Payment Mock Service &nbsp;|&nbsp; 2026-04-18
+</div>
+
+</body>
+</html>

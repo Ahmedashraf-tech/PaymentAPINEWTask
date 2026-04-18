@@ -1,0 +1,546 @@
+{
+  "info": {
+    "_postman_id": "payment-mock-collection-001",
+    "name": "Payment Mock Service",
+    "description": "Mock service for payment initiation with IBAN validation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://9e5debcc-2a09-4c4d-ba6f-45cdc68bff6a.mock.pstmn.io",
+      "type": "string",
+      "description": "Replace with your Postman Mock Server URL"
+    }
+  ],
+  "item": [
+    {
+      "name": "Scenario 1 - Successful Payment (Valid IBAN, Amount <= 1000)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Pre-request: set valid test data",
+              "pm.variables.set('debtorIban',    'DE89370400440532013000');",
+              "pm.variables.set('creditorIban',  'DE89770400440532013000');",
+              "pm.variables.set('amount',        '150.75');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ── IBAN Validation Helper ─────────────────────────────────────────────",
+              "function validateIban(iban) {",
+              "    if (!iban || typeof iban !== 'string') return { valid: false, reason: 'IBAN is missing or not a string' };",
+              "    if (iban.length !== 22)                return { valid: false, reason: 'IBAN must be exactly 22 characters, got ' + iban.length };",
+              "    if (!/^[A-Z]{2}/.test(iban))           return { valid: false, reason: 'First 2 characters must be uppercase letters (A-Z)' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}/.test(iban))  return { valid: false, reason: 'Characters 3-4 must be digits (0-9)' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{18}$/.test(iban)) return { valid: false, reason: 'Characters 5-22 must be alphanumeric (A-Z, 0-9)' };",
+              "    return { valid: true };",
+              "}",
+              "",
+              "// ── Amount Validation Helper ───────────────────────────────────────────",
+              "function validateAmount(amount) {",
+              "    const parsed = parseFloat(amount);",
+              "    if (isNaN(parsed)) return { valid: false, reason: 'Amount is not a valid number' };",
+              "    if (parsed > 1000) return { valid: false, reason: 'Insufficient funds: amount exceeds 1000' };",
+              "    return { valid: true, value: parsed };",
+              "}",
+              "",
+              "// ── Read request body ──────────────────────────────────────────────────",
+              "const body          = JSON.parse(pm.request.body.raw);",
+              "const debtorIban    = body.debtorAccount.iban;",
+              "const creditorIban  = body.creditorAccount.iban;",
+              "const amount        = body.instructedAmount.amount;",
+              "",
+              "// ── Run validations ────────────────────────────────────────────────────",
+              "const debtorResult   = validateIban(debtorIban);",
+              "const creditorResult = validateIban(creditorIban);",
+              "const amountResult   = validateAmount(amount);",
+              "",
+              "// ── IBAN Tests ─────────────────────────────────────────────────────────",
+              "pm.test('Debtor IBAN is exactly 22 characters', () => {",
+              "    pm.expect(debtorIban.length).to.equal(22);",
+              "});",
+              "pm.test('Debtor IBAN starts with 2 uppercase letters', () => {",
+              "    pm.expect(debtorIban).to.match(/^[A-Z]{2}/);",
+              "});",
+              "pm.test('Debtor IBAN chars 3-4 are digits', () => {",
+              "    pm.expect(debtorIban.substring(2, 4)).to.match(/^[0-9]{2}$/);",
+              "});",
+              "pm.test('Debtor IBAN chars 5-22 are alphanumeric', () => {",
+              "    pm.expect(debtorIban.substring(4)).to.match(/^[A-Z0-9]{18}$/);",
+              "});",
+              "pm.test('Debtor IBAN has no spaces or special characters', () => {",
+              "    pm.expect(debtorIban).to.match(/^[A-Z0-9]+$/);",
+              "});",
+              "pm.test('Creditor IBAN is valid (22 chars, correct format)', () => {",
+              "    pm.expect(creditorResult.valid).to.be.true;",
+              "});",
+              "",
+              "// ── Amount Tests ───────────────────────────────────────────────────────",
+              "pm.test('Amount is <= 1000 (no insufficient funds)', () => {",
+              "    pm.expect(parseFloat(amount)).to.be.at.most(1000);",
+              "});",
+              "",
+              "// ── Response Tests ─────────────────────────────────────────────────────",
+              "pm.test('Status code is 201 Created', () => {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('Response has transactionStatus RCVD', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.transactionStatus).to.equal('RCVD');",
+              "});",
+              "pm.test('Response has paymentId', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.paymentId).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('Response has _links.self and _links.status', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json._links).to.have.property('self');",
+              "    pm.expect(json._links).to.have.property('status');",
+              "});",
+              "pm.test('transactionFeeIndicator is boolean true', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.transactionFeeIndicator).to.equal(true);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-Scenario", "value": "success" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Scenario 1: Valid IBAN + Amount <= 1000 → 201 Created"
+      },
+      "response": [
+        {
+          "name": "201 Created - Successful Payment",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Mock-Scenario", "value": "success" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "payments"]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"transactionStatus\": \"RCVD\",\n  \"paymentId\": \"PAY123456789\",\n  \"transactionFeeIndicator\": true,\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/v1/payments/PAY123456789\"\n    },\n    \"status\": {\n      \"href\": \"/v1/payments/PAY123456789/status\"\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Scenario 2 - Invalid IBAN Format (422)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Set invalid IBAN for testing",
+              "pm.variables.set('invalidIban', 'DE123');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ── IBAN Validation Helper ─────────────────────────────────────────────",
+              "function validateIban(iban) {",
+              "    if (!iban || typeof iban !== 'string') return { valid: false, reason: 'IBAN is missing or not a string' };",
+              "    if (iban.length !== 22)                return { valid: false, reason: 'IBAN must be exactly 22 characters, got ' + iban.length };",
+              "    if (!/^[A-Z]{2}/.test(iban))           return { valid: false, reason: 'First 2 characters must be uppercase letters (A-Z)' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}/.test(iban))  return { valid: false, reason: 'Characters 3-4 must be digits (0-9)' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{18}$/.test(iban)) return { valid: false, reason: 'Characters 5-22 must be alphanumeric (A-Z, 0-9)' };",
+              "    return { valid: true };",
+              "}",
+              "",
+              "const body       = JSON.parse(pm.request.body.raw);",
+              "const debtorIban = body.debtorAccount.iban;",
+              "const result     = validateIban(debtorIban);",
+              "",
+              "// ── IBAN Failure Tests ─────────────────────────────────────────────────",
+              "pm.test('Debtor IBAN is NOT 22 characters (invalid)', () => {",
+              "    pm.expect(debtorIban.length).to.not.equal(22);",
+              "});",
+              "pm.test('IBAN validation correctly detects invalid format', () => {",
+              "    pm.expect(result.valid).to.be.false;",
+              "});",
+              "",
+              "// ── Response Tests ─────────────────────────────────────────────────────",
+              "pm.test('Status code is 422 Unprocessable Entity', () => {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Response type is INVALID_IBAN_FORMAT', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.type).to.equal('INVALID_IBAN_FORMAT');",
+              "});",
+              "pm.test('Response status field equals 422', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.equal(422);",
+              "});",
+              "pm.test('Response contains validationRules', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.validationRules).to.be.an('object');",
+              "    pm.expect(json.validationRules.totalLength).to.equal(22);",
+              "});",
+              "pm.test('Response contains invalidFields array', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.invalidFields).to.be.an('array').with.length.greaterThan(0);",
+              "});",
+              "pm.test('invalidFields contains debtorAccount.iban', () => {",
+              "    const json   = pm.response.json();",
+              "    const fields = json.invalidFields.map(f => f.field);",
+              "    pm.expect(fields).to.include('debtorAccount.iban');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE123\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Scenario 2: Invalid IBAN (too short, wrong format) → 422"
+      },
+      "response": [
+        {
+          "name": "422 Unprocessable Entity - Invalid IBAN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE123\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "payments"]
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"type\": \"INVALID_IBAN_FORMAT\",\n  \"title\": \"Invalid IBAN format\",\n  \"status\": 422,\n  \"detail\": \"The provided IBAN format is invalid\",\n  \"validationRules\": {\n    \"pattern\": \"2 uppercase letters + 2 digits + 18 alphanumeric characters\",\n    \"totalLength\": 22,\n    \"allowedCharacters\": \"A-Z, 0-9, no spaces or special characters\"\n  },\n  \"invalidFields\": [\n    {\n      \"field\": \"debtorAccount.iban\",\n      \"reason\": \"Format validation failed\",\n      \"providedValue\": \"DE123\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Scenario 3 - Insufficient Funds (Amount > 1000)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Set amount > 1000 to trigger insufficient funds",
+              "pm.variables.set('highAmount', '1500.75');"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ── Amount Validation Helper ───────────────────────────────────────────",
+              "function validateAmount(amount) {",
+              "    const parsed = parseFloat(amount);",
+              "    if (isNaN(parsed)) return { valid: false, reason: 'Amount is not a valid number' };",
+              "    if (parsed > 1000) return { valid: false, reason: 'Insufficient funds: amount exceeds 1000' };",
+              "    return { valid: true, value: parsed };",
+              "}",
+              "",
+              "const body   = JSON.parse(pm.request.body.raw);",
+              "const amount = body.instructedAmount.amount;",
+              "const result = validateAmount(amount);",
+              "",
+              "// ── Amount Failure Tests ───────────────────────────────────────────────",
+              "pm.test('Amount is greater than 1000 (triggers insufficient funds)', () => {",
+              "    pm.expect(parseFloat(amount)).to.be.greaterThan(1000);",
+              "});",
+              "pm.test('Amount validation correctly detects insufficient funds', () => {",
+              "    pm.expect(result.valid).to.be.false;",
+              "});",
+              "",
+              "// ── Response Tests ─────────────────────────────────────────────────────",
+              "pm.test('Status code is 400 Bad Request', () => {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Response type is INSUFFICIENT_FUNDS', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.type).to.equal('INSUFFICIENT_FUNDS');",
+              "});",
+              "pm.test('Response status field equals 400', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.equal(400);",
+              "});",
+              "pm.test('Response contains availableBalance', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.availableBalance).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('Response contains requestedAmount', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.requestedAmount).to.be.a('string').and.not.empty;",
+              "});",
+              "pm.test('requestedAmount in response matches request', () => {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.requestedAmount).to.equal('1500.75');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-Scenario", "value": "insufficient-funds" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"1500.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Scenario 3: Valid IBAN but amount > 1000 → 400 Bad Request"
+      },
+      "response": [
+        {
+          "name": "400 Bad Request - Insufficient Funds",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Mock-Scenario", "value": "insufficient-funds" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"1500.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "payments"]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"type\": \"INSUFFICIENT_FUNDS\",\n  \"title\": \"Insufficient funds\",\n  \"status\": 400,\n  \"detail\": \"The debtor account has insufficient funds to execute the payment\",\n  \"availableBalance\": \"850.00\",\n  \"requestedAmount\": \"1500.75\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Scenario 4 - IBAN with Spaces (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "function validateIban(iban) {",
+              "    if (!iban || typeof iban !== 'string') return { valid: false, reason: 'IBAN is missing' };",
+              "    if (iban.length !== 22)                return { valid: false, reason: 'Wrong length: ' + iban.length };",
+              "    if (!/^[A-Z]{2}/.test(iban))           return { valid: false, reason: 'Invalid country code' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}/.test(iban))  return { valid: false, reason: 'Invalid check digits' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{18}$/.test(iban)) return { valid: false, reason: 'Invalid BBAN or contains spaces/special chars' };",
+              "    return { valid: true };",
+              "}",
+              "",
+              "const body       = JSON.parse(pm.request.body.raw);",
+              "const debtorIban = body.debtorAccount.iban;",
+              "const result     = validateIban(debtorIban);",
+              "",
+              "pm.test('IBAN with spaces fails validation', () => {",
+              "    pm.expect(result.valid).to.be.false;",
+              "});",
+              "pm.test('Status code is 422', () => {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Response type is INVALID_IBAN_FORMAT', () => {",
+              "    pm.expect(pm.response.json().type).to.equal('INVALID_IBAN_FORMAT');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89 3704 0044 0532 0130 00\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Scenario 4: IBAN with spaces → 422 (spaces not allowed)"
+      },
+      "response": [
+        {
+          "name": "422 - IBAN with spaces",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"DE89 3704 0044 0532 0130 00\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "payments"]
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"type\": \"INVALID_IBAN_FORMAT\",\n  \"title\": \"Invalid IBAN format\",\n  \"status\": 422,\n  \"detail\": \"The provided IBAN format is invalid\",\n  \"validationRules\": {\n    \"pattern\": \"2 uppercase letters + 2 digits + 18 alphanumeric characters\",\n    \"totalLength\": 22,\n    \"allowedCharacters\": \"A-Z, 0-9, no spaces or special characters\"\n  },\n  \"invalidFields\": [\n    {\n      \"field\": \"debtorAccount.iban\",\n      \"reason\": \"Format validation failed - spaces are not allowed\",\n      \"providedValue\": \"DE89 3704 0044 0532 0130 00\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Scenario 5 - Lowercase IBAN (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "function validateIban(iban) {",
+              "    if (!iban || typeof iban !== 'string') return { valid: false, reason: 'IBAN is missing' };",
+              "    if (iban.length !== 22)                return { valid: false, reason: 'Wrong length' };",
+              "    if (!/^[A-Z]{2}/.test(iban))           return { valid: false, reason: 'Country code must be uppercase' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}/.test(iban))  return { valid: false, reason: 'Invalid check digits' };",
+              "    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{18}$/.test(iban)) return { valid: false, reason: 'BBAN must be uppercase alphanumeric' };",
+              "    return { valid: true };",
+              "}",
+              "",
+              "const body       = JSON.parse(pm.request.body.raw);",
+              "const debtorIban = body.debtorAccount.iban;",
+              "const result     = validateIban(debtorIban);",
+              "",
+              "pm.test('Lowercase IBAN fails validation (must be uppercase)', () => {",
+              "    pm.expect(result.valid).to.be.false;",
+              "});",
+              "pm.test('Status code is 422', () => {",
+              "    pm.response.to.have.status(422);",
+              "});",
+              "pm.test('Error type is INVALID_IBAN_FORMAT', () => {",
+              "    pm.expect(pm.response.json().type).to.equal('INVALID_IBAN_FORMAT');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"de89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/payments",
+          "host": ["{{baseUrl}}"],
+          "path": ["v1", "payments"]
+        },
+        "description": "Scenario 5: Lowercase IBAN → 422 (must be uppercase)"
+      },
+      "response": [
+        {
+          "name": "422 - Lowercase IBAN",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Mock-Scenario", "value": "invalid-iban" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instructedAmount\": {\n    \"currency\": \"EUR\",\n    \"amount\": \"150.75\"\n  },\n  \"debtorAccount\": {\n    \"iban\": \"de89370400440532013000\"\n  },\n  \"creditorAccount\": {\n    \"iban\": \"DE89770400440532013000\"\n  },\n  \"creditorName\": \"Amazon EU\",\n  \"remittanceInformationUnstructured\": \"Invoice #AMZ-2024-001\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "payments"]
+            }
+          },
+          "status": "Unprocessable Entity",
+          "code": 422,
+          "header": [
+            { "key": "Content-Type", "value": "application/json" }
+          ],
+          "body": "{\n  \"type\": \"INVALID_IBAN_FORMAT\",\n  \"title\": \"Invalid IBAN format\",\n  \"status\": 422,\n  \"detail\": \"The provided IBAN format is invalid\",\n  \"validationRules\": {\n    \"pattern\": \"2 uppercase letters + 2 digits + 18 alphanumeric characters\",\n    \"totalLength\": 22,\n    \"allowedCharacters\": \"A-Z, 0-9, no spaces or special characters\"\n  },\n  \"invalidFields\": [\n    {\n      \"field\": \"debtorAccount.iban\",\n      \"reason\": \"Country code must be uppercase letters (A-Z)\",\n      \"providedValue\": \"de89370400440532013000\"\n    }\n  ]\n}"
+        }
+      ]
+    }
+  ]
+}
